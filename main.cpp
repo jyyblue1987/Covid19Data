@@ -48,133 +48,184 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
 {
   ifstream infile(filename);
 
-  if( infile.is_open() )
+  if( infile.is_open() == false )
+    return;
+  
+  string line;
+  getline(infile, line); // skip first line (header row):
+  while (getline(infile, line))
   {
-    string line;
-    getline(infile, line); // skip first line (header row):
-    while (getline(infile, line))
+    if (line[0] == '"') // => province is "city, state"
     {
-      if (line[0] == '"') // => province is "city, state"
-      {
-        //
-        // we want to delete the " on either end of the value, and
-        // delete the ',' embedded within => will get city state:
-        //
-        line.erase(0, 1); // delete the leading "
-        size_t pos = line.find(','); // find embedded ','
-        line.erase(pos, 1); // delete ','
-        pos = line.find('"'); // find closing "
-        line.erase(pos, 1); // delete closing "
-      }
-
-      stringstream s(line);
-      string province, country, last_update;
-      string confirmed, deaths, recovered;
-      getline(s, province, ',');
-      getline(s, country, ',');
-      getline(s, last_update, ',');
-      getline(s, confirmed, ',');
-
-      getline(s, deaths, ',');
-      getline(s, recovered, ',');
-      if (confirmed == "")
-        confirmed = "0";
-      if (deaths == "")
-        deaths = "0";
-      if (recovered == "")
-        recovered = "0";
-      if (country == "Mainland China") // map to name in the earlier reports:
-        country = "China";
-
-      int confirmed_n = stoi(confirmed);
-      int deaths_n = stoi(deaths);
-      int recovered_n = stoi(recovered);
-      
-      // change date to standard
-      int pos = last_update.find('/');
-      string year, month, day;
-      if( pos >= 0 )
-      {
-        day = last_update.substr(0,pos);
-        if( day.length() < 2 )
-          day = "0" + day;
-        int pos1 = last_update.find('/', pos + 1);
-        month = last_update.substr(pos + 1, pos1 - pos - 1);
-        if( month.length() < 2 )
-          month = "0" + month;
-        int pos2 = last_update.find(' ', pos1 + 1);
-        year = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
-        year = "20" + year;
-      }
-      
-      pos = last_update.find('-');
-
-      if( pos >= 0 )
-      {
-        year = last_update.substr(0,pos);
-        int pos1 = last_update.find('-', pos + 1);
-        month = last_update.substr(pos + 1, pos1 - pos - 1);
-        int pos2 = last_update.find('T', pos1 + 1);
-        day = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
-      }
-
-      int pos3 = filename.rfind(".");
-      string date = filename.substr(pos3 - 10, 10);
-
-      // if( country == "Afghanistan" )
-      //   cout << filename << " " << date << " " << confirmed_n << ", " << deaths_n << ", " << recovered_n << endl;
-
-      // check if country key exists
-      auto iter_country = data.find(country);
-      
-      if( iter_country == data.end() ) // not found
-      {
-        map<string, Report> report_map;
-
-        Report report;
-        report.confirmed = confirmed_n;
-        report.recovered = recovered_n;
-        report.deaths = deaths_n;
-        report.country = country;
-
-        report_map[date] = report; 
-
-        data[country] = report_map;
-
-        // if( country == "Afghanistan" )
-        //   cout << "Create Country " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
-      }
-      else
-      {
-        map<string, Report> date_map = data[country];
-        auto iter_date = date_map.find(date);
-        if( iter_date == date_map.end() )
-        {
-          Report report;
-          report.confirmed = confirmed_n;
-          report.recovered = recovered_n;
-          report.deaths = deaths_n;
-          report.country = country;
-          
-          data[country][date] = report;
-
-          // if( country == "Afghanistan" )
-          //   cout << "Create Date " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
-        }
-        else
-        {
-          data[country][date].confirmed += confirmed_n;
-          data[country][date].recovered += recovered_n;
-          data[country][date].deaths += deaths_n;
-
-          // if( country == "Afghanistan" )
-          //   cout << "Add Data " << date << " " << data[country][date].confirmed << ", " << data[country][date].deaths << ", " << data[country][date].recovered << endl;
-        }
-      }
+      //
+      // we want to delete the " on either end of the value, and
+      // delete the ',' embedded within => will get city state:
+      //
+      line.erase(0, 1); // delete the leading "
+      size_t pos = line.find(','); // find embedded ','
+      line.erase(pos, 1); // delete ','
+      pos = line.find('"'); // find closing "
+      line.erase(pos, 1); // delete closing "
     }
 
-    infile.close();
+    stringstream s(line);
+    string province, country, last_update;
+    string confirmed, deaths, recovered;
+    getline(s, province, ',');
+    getline(s, country, ',');
+    getline(s, last_update, ',');
+    getline(s, confirmed, ',');
+
+    getline(s, deaths, ',');
+    getline(s, recovered, ',');
+    if (confirmed == "")
+      confirmed = "0";
+    if (deaths == "")
+      deaths = "0";
+    if (recovered == "")
+      recovered = "0";
+    if (country == "Mainland China") // map to name in the earlier reports:
+      country = "China";
+
+    int confirmed_n = stoi(confirmed);
+    int deaths_n = stoi(deaths);
+    int recovered_n = stoi(recovered);
+    
+    // change date to standard
+    int pos = last_update.find('/');
+    string year, month, day;
+    if( pos >= 0 )
+    {
+      day = last_update.substr(0,pos);
+      if( day.length() < 2 )
+        day = "0" + day;
+      int pos1 = last_update.find('/', pos + 1);
+      month = last_update.substr(pos + 1, pos1 - pos - 1);
+      if( month.length() < 2 )
+        month = "0" + month;
+      int pos2 = last_update.find(' ', pos1 + 1);
+      year = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
+      year = "20" + year;
+    }
+    
+    pos = last_update.find('-');
+
+    if( pos >= 0 )
+    {
+      year = last_update.substr(0,pos);
+      int pos1 = last_update.find('-', pos + 1);
+      month = last_update.substr(pos + 1, pos1 - pos - 1);
+      int pos2 = last_update.find('T', pos1 + 1);
+      day = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
+    }
+
+    int pos3 = filename.rfind(".");
+    string date = filename.substr(pos3 - 10, 10);
+
+    // if( country == "Afghanistan" )
+    //   cout << filename << " " << date << " " << confirmed_n << ", " << deaths_n << ", " << recovered_n << endl;
+
+    // check if country key exists
+    auto iter_country = data.find(country);
+    
+    if( iter_country == data.end() ) // not found
+    {
+      map<string, Report> report_map;
+
+      Report report;
+      report.confirmed = confirmed_n;
+      report.recovered = recovered_n;
+      report.deaths = deaths_n;
+      report.country = country;
+
+      report_map[date] = report; 
+
+      data[country] = report_map;
+
+      continue;
+
+      // if( country == "Afghanistan" )
+      //   cout << "Create Country " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
+    }
+    
+    map<string, Report> date_map = data[country];
+    auto iter_date = date_map.find(date);
+    if( iter_date == date_map.end() )
+    {
+      Report report;
+      report.confirmed = confirmed_n;
+      report.recovered = recovered_n;
+      report.deaths = deaths_n;
+      report.country = country;
+      
+      data[country][date] = report;
+
+      // if( country == "Afghanistan" )
+      //   cout << "Create Date " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
+    }
+    else
+    {
+      data[country][date].confirmed += confirmed_n;
+      data[country][date].recovered += recovered_n;
+      data[country][date].deaths += deaths_n;
+
+      // if( country == "Afghanistan" )
+      //   cout << "Add Data " << date << " " << data[country][date].confirmed << ", " << data[country][date].deaths << ", " << data[country][date].recovered << endl;
+    }
+    
   }
+
+  infile.close();  
+}
+
+void readLifeExpect(string filename, map<string, float> &life_map)
+{
+  ifstream infile(filename);
+
+  if( infile.is_open() == false )
+    return;
+  
+  string line;
+  getline(infile, line); // skip first line (header row):
+  while (getline(infile, line))
+  {
+    string num, country, life;
+
+    stringstream s(line);
+
+    getline(s, num, ',');
+    getline(s, country, ',');
+    getline(s, life, ',');
+
+    life_map[country] = stof(life);
+  }
+
+  infile.close();
+}
+
+void readPopuplate(string filename, map<string, int> &popu_map)
+{
+  ifstream infile(filename);
+
+  if( infile.is_open() == false )
+    return;
+  
+  string line;
+  getline(infile, line); // skip first line (header row):
+  while (getline(infile, line))
+  {
+    string num, country, count;
+
+    stringstream s(line);
+
+    getline(s, num, ',');
+    getline(s, country, ',');
+    getline(s, count, ',');
+
+    popu_map[country] = stoi(count);
+  }
+
+  infile.close();
 }
 
 string getMaxDate(map<string, map<string, Report>> & data)
@@ -274,6 +325,89 @@ void displayTop10(map<string, map<string, Report>> & data)
     i++;
   }
 }
+
+void displayIndividualCountry(string country, map<string, map<string, Report>> & data, map<string, float> life, map<string, int> popu)
+{
+  int popu_val = 0;
+  if( popu.find(country) != popu.end() )
+    popu_val = popu[country];
+
+  float life_val = 0.0f;
+  if( life.find(country) != life.end() )
+    life_val = life[country];
+
+  cout << "Population: " << popu_val << endl;
+  cout << "Life Expectancy: " << life_val << " years" << endl;
+
+  if( data.find(country) == data.end() )
+    return;
+  
+  auto last = data[country].rbegin();
+
+  cout << "Latest data:" << endl;
+  cout << " confirmed: " << last->second.confirmed << endl;
+  cout << " deaths: " << last->second.deaths << endl;
+  cout << " recovered: " << last->second.recovered << endl;
+
+  map<string, Report> country_map = data[country];
+  int i = 0;
+
+  string first_confirm = "none";
+
+  for(auto iter = country_map.begin(); iter != country_map.end(); iter++)
+  {
+    if( iter->second.confirmed > 0 )
+    {
+      first_confirm = iter->first;
+      break;
+    }
+  }
+
+  string first_deaths = "none";
+
+  for(auto iter = country_map.begin(); iter != country_map.end(); iter++)
+  {
+    if( iter->second.deaths > 0 )
+    {
+      first_deaths = iter->first;
+      break;
+    }
+  }
+  
+  cout << "First confirmed case: " << first_confirm << endl;
+  cout << "First recorded death: " << first_deaths << endl;
+
+  cout << "Do you want to see a timeline? Enter c/d/r/n> ";
+  string command;
+  cin >> command;
+
+
+  if( command == "c" )
+    cout << "Confirmed:";
+  if( command == "d" )
+    cout << "Deaths:";
+  if( command == "r" )
+    cout << "Recovered:";
+
+  cout << endl;
+
+  for(auto iter = country_map.begin(); iter != country_map.end(); iter++)
+  {      
+    int cnt = 0;
+    if( command == "c" )
+      cnt = iter->second.confirmed;
+    if( command == "d" )
+      cnt = iter->second.deaths;
+    if( command == "r" )
+      cnt = iter->second.recovered;
+
+    if( cnt > 0)
+      cout << iter->first << " (day " << (i + 1) << "): " << cnt << endl; 
+
+    i++;        
+  }    
+}
+
 //
 // main:
 //
@@ -313,6 +447,14 @@ int main()
     readOneDailyReport(filename, data);
   }
 
+  // read life expectation
+  map<string, float> life;
+  readLifeExpect(worldfacts_files[0], life);
+
+  // read population
+  map<string, int> popu;
+  readPopuplate(worldfacts_files[1], popu);
+
   cout << ">> Current data on " << data.size() << " countries" << endl;
 
   while(true) 
@@ -341,6 +483,16 @@ int main()
     else if( command == "top10" )
     {
       displayTop10(data);
+    }
+    else {
+      auto iter = data.find(command);
+      if( iter == data.end() )
+      {
+        cout << "country or command not found..." << endl;
+        continue;
+      }
+
+      displayIndividualCountry(command, data, life, popu);
     }
 
   }
