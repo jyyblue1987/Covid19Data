@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <vector>
 #include <map>
+#include <algorithm>    // std::sort
 
 using namespace std;
 namespace fs = std::experimental::filesystem;
@@ -35,9 +36,10 @@ vector<string> getFilesWithinFolder(string folderPath)
 
   for (const auto& entry : fs::directory_iterator(folderPath))
   {
-    files.push_back(entry.path().string());
+    files.push_back(entry.path().string());    
   }
 
+  std::sort(files.begin(), files.end());
   return files;
 }
 
@@ -115,10 +117,15 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
         day = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
       }
 
-      string date = day + "-" + month + "-" + year;
+      int pos3 = filename.rfind(".");
+      string date = filename.substr(pos3 - 10, 10);
+
+      // if( country == "Afghanistan" )
+      //   cout << filename << " " << date << " " << confirmed_n << ", " << deaths_n << ", " << recovered_n << endl;
 
       // check if country key exists
       auto iter_country = data.find(country);
+      
       if( iter_country == data.end() ) // not found
       {
         map<string, Report> report_map;
@@ -127,9 +134,13 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
         report.confirmed = confirmed_n;
         report.recovered = recovered_n;
         report.deaths = deaths_n;
+
         report_map[date] = report; 
 
         data[country] = report_map;
+
+        // if( country == "Afghanistan" )
+        //   cout << "Create Country " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
       }
       else
       {
@@ -142,13 +153,19 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
           report.recovered = recovered_n;
           report.deaths = deaths_n;
           
-          date_map[date] = report;
+          data[country][date] = report;
+
+          // if( country == "Afghanistan" )
+          //   cout << "Create Date " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
         }
         else
         {
-          date_map[date].confirmed += confirmed_n;
-          date_map[date].recovered += recovered_n;
-          date_map[date].deaths += deaths_n;
+          data[country][date].confirmed += confirmed_n;
+          data[country][date].recovered += recovered_n;
+          data[country][date].deaths += deaths_n;
+
+          // if( country == "Afghanistan" )
+          //   cout << "Add Data " << date << " " << data[country][date].confirmed << ", " << data[country][date].deaths << ", " << data[country][date].recovered << endl;
         }
       }
     }
@@ -157,31 +174,66 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
   }
 }
 
+string getMaxDate(map<string, map<string, Report>> & data)
+{
+  string max_date = "";
+
+  // get max date
+  for(auto const &x : data) {
+    auto const &date_map = x.second;
+    auto iter = date_map.rbegin();
+
+    // cout << x.first << ", " << iter->first << endl;
+    string date = iter->first;
+    if( date > max_date )
+      max_date = date;
+  }
+
+  return max_date;
+}
+
 void displayTotal(map<string, map<string, Report>> & data)
 {
-  std::map<std::string, std::map<std::string, std::string>> mymap;
-
   int confirmed = 0, recovered = 0, deaths = 0;
-  string max_date = "";
+  string max_date = getMaxDate(data);
+
   for(auto const &x : data) {
-    // ent1.first is the first key
-    // auto const &country = x.first;
     auto const &date_map = x.second;
-    for(auto const &y : date_map) {
-      string date = y.first;
-      if( date > max_date )
-        max_date = date;
-      Report report = y.second;
-      confirmed += report.confirmed;
-      recovered += report.recovered;
-      deaths += report.deaths;
+    auto iter = date_map.rbegin();
+
+    string date = iter->first;
+    if( date != max_date )
+    {
+      // cout << x.first << "----" << date << endl;
+      continue; 
     }
+
+    confirmed += iter->second.confirmed;
+    deaths += iter->second.deaths;
+    recovered += iter->second.recovered;   
   }
 
   cout << "As of " << max_date << ", the world-wide totals are:" << endl;
   cout << " confirmed: " << confirmed << endl;
   cout << " deaths: " << deaths << endl;
   cout << " recovered: " << recovered << endl;
+}
+
+void displayCountryData(map<string, map<string, Report>> & data)
+{
+  string max_date = getMaxDate(data);
+  for(auto const &x : data) {
+    auto const &date_map = x.second;
+    auto iter = date_map.rbegin();
+    string date = iter->first;
+    if( date != max_date )
+    {
+      // cout << x.first << "----" << date << endl;
+      continue; 
+    }
+
+    cout << x.first << ": " << iter->second.confirmed << ", " << iter->second.deaths << ", " << iter->second.recovered << endl;     
+  }
 }
 
 //
@@ -244,6 +296,10 @@ int main()
     if( command == "totals" )
     {
       displayTotal(data);
+    }
+    if( command == "countries" )
+    {
+      displayCountryData(data);
     }
   }
   return 0;
