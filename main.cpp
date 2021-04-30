@@ -2,6 +2,9 @@
 
 //
 // header comment???
+// Your Name: xxx
+// Program Overview: 
+//  use a C++ map data structure (and other data structures if needed) to input and analyze daily reports surrounding the Covid-19 virus
 //
 
 #include <iostream>
@@ -44,6 +47,12 @@ vector<string> getFilesWithinFolder(string folderPath)
   return files;
 }
 
+// Purpose: read covid report data from file and save it on map data based on country key
+// Params:
+//     [IN] filename: input file name
+//     [OUT] data: covid 19 report data
+// Return Type:
+//    None
 void readOneDailyReport(string filename, map<string, map<string, Report>> & data)
 {
   ifstream infile(filename);
@@ -56,11 +65,7 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
   while (getline(infile, line))
   {
     if (line[0] == '"') // => province is "city, state"
-    {
-      //
-      // we want to delete the " on either end of the value, and
-      // delete the ',' embedded within => will get city state:
-      //
+    {     
       line.erase(0, 1); // delete the leading "
       size_t pos = line.find(','); // find embedded ','
       line.erase(pos, 1); // delete ','
@@ -91,39 +96,8 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
     int deaths_n = stoi(deaths);
     int recovered_n = stoi(recovered);
     
-    // change date to standard
-    int pos = last_update.find('/');
-    string year, month, day;
-    if( pos >= 0 )
-    {
-      day = last_update.substr(0,pos);
-      if( day.length() < 2 )
-        day = "0" + day;
-      int pos1 = last_update.find('/', pos + 1);
-      month = last_update.substr(pos + 1, pos1 - pos - 1);
-      if( month.length() < 2 )
-        month = "0" + month;
-      int pos2 = last_update.find(' ', pos1 + 1);
-      year = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
-      year = "20" + year;
-    }
-    
-    pos = last_update.find('-');
-
-    if( pos >= 0 )
-    {
-      year = last_update.substr(0,pos);
-      int pos1 = last_update.find('-', pos + 1);
-      month = last_update.substr(pos + 1, pos1 - pos - 1);
-      int pos2 = last_update.find('T', pos1 + 1);
-      day = last_update.substr(pos1 + 1, pos2 - pos1 - 1);
-    }
-
     int pos3 = filename.rfind(".");
     string date = filename.substr(pos3 - 10, 10);
-
-    // if( country == "Afghanistan" )
-    //   cout << filename << " " << date << " " << confirmed_n << ", " << deaths_n << ", " << recovered_n << endl;
 
     // check if country key exists
     auto iter_country = data.find(country);
@@ -143,9 +117,6 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
       data[country] = report_map;
 
       continue;
-
-      // if( country == "Afghanistan" )
-      //   cout << "Create Country " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
     }
     
     map<string, Report> date_map = data[country];
@@ -159,18 +130,12 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
       report.country = country;
       
       data[country][date] = report;
-
-      // if( country == "Afghanistan" )
-      //   cout << "Create Date " << date << " " << confirmed << ", " << deaths << ", " << recovered << endl;
     }
     else
     {
       data[country][date].confirmed += confirmed_n;
       data[country][date].recovered += recovered_n;
       data[country][date].deaths += deaths_n;
-
-      // if( country == "Afghanistan" )
-      //   cout << "Add Data " << date << " " << data[country][date].confirmed << ", " << data[country][date].deaths << ", " << data[country][date].recovered << endl;
     }
     
   }
@@ -178,6 +143,12 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
   infile.close();  
 }
 
+// Purpose: read life expectation data from file and save it on map data based on country key
+// Params:
+//     [IN] filename: input file name
+//     [OUT] life_map: life expectation data
+// Return Type:
+//    None
 void readLifeExpect(string filename, map<string, float> &life_map)
 {
   ifstream infile(filename);
@@ -203,6 +174,12 @@ void readLifeExpect(string filename, map<string, float> &life_map)
   infile.close();
 }
 
+// Purpose: read population data from file and save it on map data based on country key
+// Params:
+//     [IN] filename: input file name
+//     [OUT] life_map: population data
+// Return Type:
+//    None
 void readPopuplate(string filename, map<string, int> &popu_map)
 {
   ifstream infile(filename);
@@ -228,6 +205,11 @@ void readPopuplate(string filename, map<string, int> &popu_map)
   infile.close();
 }
 
+// Purpose: get the maximum date from covid 19 report map data
+// Params:
+//     [IN] data: report map data
+// Return Type:
+//      String: maximum report date
 string getMaxDate(map<string, map<string, Report>> & data)
 {
   string max_date = "";
@@ -246,6 +228,11 @@ string getMaxDate(map<string, map<string, Report>> & data)
   return max_date;
 }
 
+// Purpose: calculate and display Total statistics data
+// Params:
+//     [IN] data: report map data
+// Return Type:
+//      None
 void displayTotal(map<string, map<string, Report>> & data)
 {
   int confirmed = 0, recovered = 0, deaths = 0;
@@ -276,6 +263,11 @@ void displayTotal(map<string, map<string, Report>> & data)
   cout << " recovered: " << recovered << " (" << recovered_percent << "%)" << endl;
 }
 
+// Purpose: calculate and display Total statistics data group by Country
+// Params:
+//     [IN] data: report map data
+// Return Type:
+//      None
 void displayCountryData(map<string, map<string, Report>> & data)
 {
   string max_date = getMaxDate(data);
@@ -293,11 +285,22 @@ void displayCountryData(map<string, map<string, Report>> & data)
   }
 }
 
+// Purpose: Comparator function for sorting report data
+// Params:
+//     [IN] a: compare1
+//     [IN] b: compare2
+// Return Type:
+//      bool: true/false
 bool confirmComparator(Report &a, Report &b)
 {
   return a.confirmed > b.confirmed;
 }
 
+// Purpose: calculate and display top 10 countrie's statistics data
+// Params:
+//     [IN] data: report map data
+// Return Type:
+//      None
 void displayTop10(map<string, map<string, Report>> & data)
 {
   string max_date = getMaxDate(data);
@@ -326,6 +329,14 @@ void displayTop10(map<string, map<string, Report>> & data)
   }
 }
 
+// Purpose: display report data for individual country
+// Params:
+//     [IN] country: country name
+//     [IN] data: report map data
+//     [IN] life: life expectation data
+//     [IN] popu: population data
+// Return Type:
+//      None
 void displayIndividualCountry(string country, map<string, map<string, Report>> & data, map<string, float> life, map<string, int> popu)
 {
   int popu_val = 0;
