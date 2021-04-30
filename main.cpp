@@ -19,6 +19,7 @@ using namespace std;
 namespace fs = std::experimental::filesystem;
 
 struct Report {
+  string country;
   int confirmed;
   int deaths;
   int recovered;
@@ -134,6 +135,7 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
         report.confirmed = confirmed_n;
         report.recovered = recovered_n;
         report.deaths = deaths_n;
+        report.country = country;
 
         report_map[date] = report; 
 
@@ -152,6 +154,7 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
           report.confirmed = confirmed_n;
           report.recovered = recovered_n;
           report.deaths = deaths_n;
+          report.country = country;
           
           data[country][date] = report;
 
@@ -213,10 +216,13 @@ void displayTotal(map<string, map<string, Report>> & data)
     recovered += iter->second.recovered;   
   }
 
+  float deaths_percent = ((float)deaths * 100) / confirmed;
+  float recovered_percent = ((float)recovered * 100) / confirmed;
+
   cout << "As of " << max_date << ", the world-wide totals are:" << endl;
   cout << " confirmed: " << confirmed << endl;
-  cout << " deaths: " << deaths << endl;
-  cout << " recovered: " << recovered << endl;
+  cout << " deaths: " << deaths << " (" << deaths_percent << "%)" << endl;
+  cout << " recovered: " << recovered << " (" << recovered_percent << "%)" << endl;
 }
 
 void displayCountryData(map<string, map<string, Report>> & data)
@@ -236,6 +242,38 @@ void displayCountryData(map<string, map<string, Report>> & data)
   }
 }
 
+bool confirmComparator(Report &a, Report &b)
+{
+  return a.confirmed > b.confirmed;
+}
+
+void displayTop10(map<string, map<string, Report>> & data)
+{
+  string max_date = getMaxDate(data);
+  vector<Report> list;
+  for(auto const &x : data) {
+    auto const &date_map = x.second;
+    auto iter = date_map.rbegin();
+    string date = iter->first;
+    if( date != max_date )
+    {
+      continue; 
+    }
+
+    list.push_back(iter->second);
+  }
+
+  std::sort(list.begin(), list.end(), confirmComparator);
+
+  int i = 1;
+  for (Report & report : list)
+  {
+    if( i > 10 )
+      break;
+    cout << i << ". " << report.country << ": " << report.confirmed << endl;
+    i++;
+  }
+}
 //
 // main:
 //
@@ -292,15 +330,19 @@ int main()
     }
     if( command == "#" )
       break;
-
-    if( command == "totals" )
+    else if( command == "totals" )
     {
       displayTotal(data);
     }
-    if( command == "countries" )
+    else if( command == "countries" )
     {
       displayCountryData(data);
     }
+    else if( command == "top10" )
+    {
+      displayTop10(data);
+    }
+
   }
   return 0;
 }
