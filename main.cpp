@@ -157,6 +157,32 @@ void readOneDailyReport(string filename, map<string, map<string, Report>> & data
   }
 }
 
+void displayTotal(map<string, map<string, Report>> & data)
+{
+  std::map<std::string, std::map<std::string, std::string>> mymap;
+
+  int confirmed = 0, recovered = 0, deaths = 0;
+  string max_date = "";
+  for(auto const &x : data) {
+    // ent1.first is the first key
+    // auto const &country = x.first;
+    auto const &date_map = x.second;
+    for(auto const &y : date_map) {
+      string date = y.first;
+      if( date > max_date )
+        max_date = date;
+      Report report = y.second;
+      confirmed += report.confirmed;
+      recovered += report.recovered;
+      deaths += report.deaths;
+    }
+  }
+
+  cout << "As of " << max_date << ", the world-wide totals are:" << endl;
+  cout << " confirmed: " << confirmed << endl;
+  cout << " deaths: " << deaths << endl;
+  cout << " recovered: " << recovered << endl;
+}
 
 //
 // main:
@@ -199,6 +225,26 @@ int main()
 
   cout << ">> Current data on " << data.size() << " countries" << endl;
 
+  while(true) 
+  {
+    cout << endl << "Enter command (help for list, # to quit)> ";
+    string command;
+    cin >> command;
+    if( command == "help" )
+    {
+      cout << "Available commands:" << endl;
+      cout << " <name>: enter a country name such as US or China" << endl;
+      cout << " countries: list all countries and most recent report" << endl;
+      cout << " top10: list of top 10 countries based on most recent # of confired cases" << endl;
+      cout << " totals: world-wide totals of confirmed, deaths, recoverd" << endl;
+    }
+    if( command == "#" )
+      break;
 
+    if( command == "totals" )
+    {
+      displayTotal(data);
+    }
+  }
   return 0;
 }
