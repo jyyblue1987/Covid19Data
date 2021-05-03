@@ -486,26 +486,27 @@ int main()
     else if( command == "totals" )
     {
       displayTotal(data);
+      continue;
     }
     else if( command == "countries" )
     {
       displayCountryData(data);
+      continue;
     }
     else if( command == "top10" )
     {
       displayTop10(data);
-    }
-    else {
-      auto iter = data.find(command);
-      if( iter == data.end() )
-      {
-        cout << "country or command not found..." << endl;
-        continue;
-      }
-
-      displayIndividualCountry(command, data, life, popu);
+      continue;
     }
 
+    auto iter = data.find(command);
+    if( iter == data.end() )
+    {
+      cout << "country or command not found..." << endl;
+      continue;
+    }
+
+    displayIndividualCountry(command, data, life, popu);
   }
   return 0;
 }
